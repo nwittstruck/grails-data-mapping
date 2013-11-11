@@ -28,6 +28,30 @@ class NestedCriteriaWithNamedQuerySpec extends GormDatastoreSpec{
             results != null
     }
 
+    @Issue('GRAILS-10762')
+    void "Test that nested criteria work with 2 levels of association"() {
+        given:"A domain model with 2 levels of association"
+        Seller seller = new Seller()
+        Ticket ticket = new Ticket()
+        seller.addToTickets(ticket)
+        seller.save(flush:true)
+        Purchase purchase = new Purchase()
+        ticket.addToPurchases(purchase)
+        purchase.save(flush: true)
+        ticket.save(flush: true)
+        session.clear()
+        when:"The data is queried"
+        def results = Purchase.createCriteria().list {
+            ticket{
+                eq('seller',seller)
+            }
+        }
+
+        then:"Results are returned"
+        results != null
+    }
+
+
     @Override
     List getDomainClasses() {
         [Seller, Ticket, Purchase]
